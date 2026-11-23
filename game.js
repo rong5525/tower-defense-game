@@ -459,14 +459,14 @@ function drawTowers() {
     const spec = TOWER_SPECS[tower.kind];
     const [sx, sy] = worldToCanvas(tower.x, tower.y);
     ctx.beginPath();
-    ctx.arc(sx, sy, 18, 0, Math.PI * 2);
+    ctx.arc(sx, sy, TOWER_BASE_RADIUS, 0, Math.PI * 2);
     ctx.fillStyle = spec.color;
     ctx.fill();
     ctx.strokeStyle = tower.id === selectedTowerId ? "#ffffff" : "#101723";
-    ctx.lineWidth = tower.id === selectedTowerId ? 8 : 4;
+    ctx.lineWidth = tower.id === selectedTowerId ? 4 : 2;
     ctx.stroke();
     ctx.fillStyle = "#10131a";
-    ctx.font = "800 28px system-ui";
+    ctx.font = "800 14px system-ui";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText({ small: "S", medium: "M", large: "L" }[tower.kind], sx, sy + 1);
@@ -530,7 +530,7 @@ function drawPreview() {
   ctx.setLineDash([]);
   ctx.globalAlpha = 0.7;
   ctx.beginPath();
-  ctx.arc(sx, sy, 18, 0, Math.PI * 2);
+  ctx.arc(sx, sy, TOWER_BASE_RADIUS, 0, Math.PI * 2);
   ctx.fillStyle = spec.color;
   ctx.fill();
   ctx.globalAlpha = 1;
