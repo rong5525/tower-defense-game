@@ -465,14 +465,7 @@ function drawTowers() {
     ctx.strokeStyle = tower.id === selectedTowerId ? "#ffffff" : "#101723";
     ctx.lineWidth = tower.id === selectedTowerId ? 4 : 2;
     ctx.stroke();
-    ctx.fillStyle = "#10131a";
-    ctx.font = "800 14px system-ui";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText({ small: "S", medium: "M", large: "L" }[tower.kind], sx, sy + 1);
   }
-  ctx.textAlign = "start";
-  ctx.textBaseline = "alphabetic";
 }
 
 function drawBeams() {
