@@ -21,6 +21,16 @@ const TOWER_SPECS = {
 };
 
 const UPGRADE_TO = { small: "medium", medium: "large" };
+const Q1_BEST_LAYOUT = [
+  ["medium", 780.185508269555, 733.6417436506911],
+  ["medium", 750.4918927478849, 764.207202927242],
+  ["medium", 768.8871974968961, 773.4735764952864],
+  ["medium", 775.4248153770882, 753.2686488146782],
+  ["medium", 755.4247544909765, 739.1554512038435],
+  ["medium", 740.0744242332423, 784.5603763865835],
+  ["medium", 758.9846149952917, 791.4224740076542],
+  ["medium", 729.5414462367831, 747.9215463226894],
+];
 const segmentLengths = [];
 const cumulativeLengths = [0];
 for (let index = 0; index < PATH_POINTS.length - 1; index += 1) {
@@ -46,6 +56,7 @@ const detailStat = document.querySelector("#detail-stat");
 const startButton = document.querySelector("#start-button");
 const speedButton = document.querySelector("#speed-button");
 const restartButton = document.querySelector("#restart-button");
+const presetButton = document.querySelector("#preset-button");
 const upgradeButton = document.querySelector("#upgrade-button");
 const modeButtons = [...document.querySelectorAll(".mode-button")];
 const towerButtons = [...document.querySelectorAll(".tower-button")];
@@ -166,6 +177,21 @@ function resetGame(mode = state?.mode ?? "q2") {
 
 function activeEnemies() {
   return state.enemies.filter((enemy) => enemy.active && !enemy.finished);
+}
+
+function loadQ1BestLayout() {
+  resetGame("q1");
+  for (const [kind, x, y] of Q1_BEST_LAYOUT) {
+    const [ok, message] = placeTower(kind, x, y);
+    if (!ok) {
+      setStatus(`优化方案载入失败：${message}`);
+      return;
+    }
+  }
+  selectedTowerId = null;
+  setStatus("已载入问题1当前最优方案：8座中型塔、总花费2000元。点击开始观看复验。");
+  draw();
+  updateInterface();
 }
 
 function gameComplete() {
@@ -578,6 +604,7 @@ towerButtons.forEach((button) => {
 startButton.addEventListener("click", toggleRunning);
 speedButton.addEventListener("click", cycleSpeed);
 restartButton.addEventListener("click", () => resetGame(state.mode));
+presetButton.addEventListener("click", loadQ1BestLayout);
 upgradeButton.addEventListener("click", upgradeSelectedTower);
 
 window.addEventListener("keydown", (event) => {
@@ -591,6 +618,7 @@ window.addEventListener("keydown", (event) => {
   else if (event.key.toLowerCase() === "u") upgradeSelectedTower();
   else if (event.key.toLowerCase() === "f") cycleSpeed();
   else if (event.key.toLowerCase() === "r") resetGame(state.mode);
+  else if (event.key.toLowerCase() === "p") loadQ1BestLayout();
   else if (event.key === "Escape") {
     selectedTowerId = null;
     setStatus("已取消已有塔的选择。");
