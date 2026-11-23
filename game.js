@@ -21,15 +21,37 @@ const TOWER_SPECS = {
 };
 
 const UPGRADE_TO = { small: "medium", medium: "large" };
-const Q1_BEST_LAYOUT = [
-  ["medium", 780.185508269555, 733.6417436506911],
-  ["medium", 750.4918927478849, 764.207202927242],
-  ["medium", 768.8871974968961, 773.4735764952864],
-  ["medium", 775.4248153770882, 753.2686488146782],
-  ["medium", 755.4247544909765, 739.1554512038435],
-  ["medium", 740.0744242332423, 784.5603763865835],
-  ["medium", 758.9846149952917, 791.4224740076542],
-  ["medium", 729.5414462367831, 747.9215463226894],
+const Q1_LAYOUTS = [
+  { name: "方案1", summary: "4杀6漏 · 临界93.1血", towers: [
+    ["medium", 780.0098431879977, 734.4548926625595], ["medium", 753.2158790506898, 760.658097232954],
+    ["medium", 768.8871974968961, 773.4735764952864], ["medium", 776.4869391827639, 754.55653503194],
+    ["medium", 760.6940284724509, 741.4992026894078], ["medium", 740.476436237285, 781.4770180485629],
+    ["medium", 759.0631388650619, 791.1021045111758], ["medium", 725.1073289889066, 748.5258207993095],
+  ]},
+  { name: "方案2", summary: "4杀6漏 · 临界93.2血", towers: [
+    ["medium", 780.0098431879977, 734.4548926625595], ["medium", 753.2158790506898, 760.658097232954],
+    ["medium", 768.8871974968961, 773.4735764952864], ["medium", 776.4869391827639, 754.55653503194],
+    ["medium", 760.6940284724509, 741.4992026894078], ["medium", 740.3633736801124, 781.4621887166928],
+    ["medium", 759.0631388650619, 791.1021045111758], ["medium", 725.1073289889066, 748.5258207993095],
+  ]},
+  { name: "方案3", summary: "4杀6漏 · 临界93.2血", towers: [
+    ["medium", 780.0098431879977, 734.4548926625595], ["medium", 753.2158790506898, 760.658097232954],
+    ["medium", 768.8871974968961, 773.4735764952864], ["medium", 776.4869391827639, 754.55653503194],
+    ["medium", 760.6940284724509, 741.4992026894078], ["medium", 740.3633736801124, 781.4621887166928],
+    ["medium", 759.0631388650619, 791.1021045111758], ["medium", 724.1907551189279, 748.8283105338132],
+  ]},
+  { name: "方案4", summary: "4杀6漏 · 临界93.2血", towers: [
+    ["medium", 780.0098431879977, 734.4548926625595], ["medium", 753.2158790506898, 760.658097232954],
+    ["medium", 768.8871974968961, 773.4735764952864], ["medium", 776.4869391827639, 754.55653503194],
+    ["medium", 760.951507955435, 740.8915685213359], ["medium", 740.6726278050561, 781.2963719118874],
+    ["medium", 759.0631388650619, 791.1021045111758], ["medium", 723.8319957130539, 748.2532281968706],
+  ]},
+  { name: "方案5", summary: "4杀6漏 · 临界93.5血", towers: [
+    ["medium", 780.0098431879977, 734.4548926625595], ["medium", 752.4316613299457, 761.1668886371367],
+    ["medium", 768.8871974968961, 773.4735764952864], ["medium", 776.4869391827639, 754.55653503194],
+    ["medium", 760.6826555266706, 741.0309265350506], ["medium", 740.6726278050561, 781.2963719118874],
+    ["medium", 759.0631388650619, 791.1021045111758], ["medium", 724.7105940682517, 748.8506722498361],
+  ]},
 ];
 const segmentLengths = [];
 const cumulativeLengths = [0];
@@ -57,6 +79,7 @@ const startButton = document.querySelector("#start-button");
 const speedButton = document.querySelector("#speed-button");
 const restartButton = document.querySelector("#restart-button");
 const presetButton = document.querySelector("#preset-button");
+const presetSelect = document.querySelector("#preset-select");
 const upgradeButton = document.querySelector("#upgrade-button");
 const modeButtons = [...document.querySelectorAll(".mode-button")];
 const towerButtons = [...document.querySelectorAll(".tower-button")];
@@ -181,7 +204,8 @@ function activeEnemies() {
 
 function loadQ1BestLayout() {
   resetGame("q1");
-  for (const [kind, x, y] of Q1_BEST_LAYOUT) {
+  const preset = Q1_LAYOUTS[Number(presetSelect.value)] ?? Q1_LAYOUTS[0];
+  for (const [kind, x, y] of preset.towers) {
     const [ok, message] = placeTower(kind, x, y);
     if (!ok) {
       setStatus(`优化方案载入失败：${message}`);
@@ -189,7 +213,7 @@ function loadQ1BestLayout() {
     }
   }
   selectedTowerId = null;
-  setStatus("已载入问题1当前最优已知方案：8座中型塔，满足题面塔心间距≥20米。点击开始观看复验。");
+  setStatus(`已载入${preset.name}：${preset.summary}，8座中型塔，塔心间距≥20米。点击开始观看复验。`);
   draw();
   updateInterface();
 }
@@ -388,7 +412,7 @@ function toggleRunning() {
 }
 
 function cycleSpeed() {
-  speed = ({ 1: 2, 2: 4, 4: 1 })[speed];
+  speed = ({ 1: 2, 2: 4, 4: 8, 8: 1 })[speed];
   setStatus(`游戏速度切换为 ${speed}×。`);
 }
 

@@ -30,7 +30,8 @@ body {
 }
 
 button,
-summary {
+summary,
+select {
   font: inherit;
 }
 
@@ -272,6 +273,33 @@ summary:focus-visible {
   min-height: 70px;
   margin: 0 0 10px;
   white-space: pre-line;
+}
+
+.preset-picker {
+  display: grid;
+  gap: 7px;
+}
+
+.preset-picker label {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.preset-picker select {
+  width: 100%;
+  min-height: 48px;
+  padding: 9px 38px 9px 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--text);
+  background-color: var(--panel-raised);
+  cursor: pointer;
+}
+
+.preset-picker select:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
 }
 
 .action-row {
