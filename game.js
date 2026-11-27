@@ -53,6 +53,24 @@ const Q1_LAYOUTS = [
     ["medium", 759.0631388650619, 791.1021045111758], ["medium", 724.7105940682517, 748.8506722498361],
   ]},
 ];
+const Q2_POLICY_ACTIONS = [
+  { action: "build", kind: "small", x: 1446.4373231428135, y: 1262.137606114312, minKills: 0 },
+  { action: "build", kind: "medium", x: 1545.0, y: 1400.0, minKills: 0 },
+  { action: "build", kind: "medium", x: 1622.726731615535, y: 1543.9399350511314, minKills: 0 },
+  { action: "build", kind: "medium", x: 1710.6066017177982, y: 1589.3933982822018, minKills: 0 },
+  { action: "build", kind: "medium", x: 1823.8828819485686, y: 1762.865957488833, minKills: 0 },
+  { action: "build", kind: "medium", x: 1178.4272251347998, y: 1007.8638743260012, minKills: 0 },
+  { action: "upgrade", towerId: 9, minKills: 0 },
+  { action: "upgrade", towerId: 10, minKills: 0 },
+  { action: "upgrade", towerId: 11, minKills: 0 },
+  { action: "upgrade", towerId: 12, minKills: 0 },
+  { action: "upgrade", towerId: 13, minKills: 0 },
+  { action: "upgrade", towerId: 14, minKills: 0 },
+  { action: "build", kind: "medium", x: 1912.5192455849324, y: 1895.8205029433784, minKills: 1 },
+  { action: "build", kind: "medium", x: 1987.4037720753383, y: 1845.897485283108, minKills: 1 },
+  { action: "upgrade", towerId: 6, minKills: 0 },
+  { action: "upgrade", towerId: 5, minKills: 0 },
+];
 const segmentLengths = [];
 const cumulativeLengths = [0];
 for (let index = 0; index < PATH_POINTS.length - 1; index += 1) {
@@ -79,6 +97,7 @@ const startButton = document.querySelector("#start-button");
 const speedButton = document.querySelector("#speed-button");
 const restartButton = document.querySelector("#restart-button");
 const presetButton = document.querySelector("#preset-button");
+const q2PresetButton = document.querySelector("#q2-preset-button");
 const presetSelect = document.querySelector("#preset-select");
 const upgradeButton = document.querySelector("#upgrade-button");
 const modeButtons = [...document.querySelectorAll(".mode-button")];
@@ -92,6 +111,7 @@ let selectedTowerId = null;
 let hoverWorld = null;
 let simulationAccumulator = 0;
 let lastFrameTime = performance.now();
+let q2AutoActions = [];
 
 function pointOnPath(distance) {
   const clamped = Math.max(0, Math.min(PATH_LENGTH, distance));
@@ -127,7 +147,7 @@ function distanceToRoad(point) {
   return best;
 }
 
-function makeEnemy(id, wave, spawnTime, maxHp, enemySpeed, bounty) {
+function makeEnemy(id, wave, spawnTime, maxHp, enemySpeed, bounty, archetype = "normal") {
   return {
     id,
     wave,
@@ -136,6 +156,7 @@ function makeEnemy(id, wave, spawnTime, maxHp, enemySpeed, bounty) {
     hp: maxHp,
     speed: enemySpeed,
     bounty,
+    archetype,
     distance: 0,
     active: false,
     finished: false,
@@ -150,6 +171,23 @@ function buildSchedule(mode) {
     return Array.from({ length: 10 }, (_, index) =>
       makeEnemy(index + 1, 1, index * 10, 1700, 20, 0),
     );
+  }
+  if (mode === "q3") {
+    const enemies = [];
+    let enemyId = 1;
+    const addWave = (wave, start, interval, members) => {
+      members.forEach(([archetype, hp, enemySpeed, bounty], member) => {
+        enemies.push(makeEnemy(enemyId, wave, start + member * interval, hp, enemySpeed, bounty, archetype));
+        enemyId += 1;
+      });
+    };
+    addWave(1, 0, 5, Array(8).fill(["scout", 750, 28, 80]));
+    addWave(2, 48, 7, Array(7).fill(["armored", 2200, 11, 220]));
+    addWave(3, 105, 4, Array.from({ length: 10 }, (_, index) =>
+      index % 2 === 0 ? ["scout", 1200, 24, 120] : ["armored", 2500, 10, 240]));
+    addWave(4, 155, 8, Array(4).fill(["elite", 3300, 12, 380]));
+    addWave(4, 187, 1, [["boss", 16000, 7, 1200]]);
+    return enemies;
   }
   const waveSpecs = [
     [5, 1500, 10, 20, 50],
@@ -177,7 +215,7 @@ function resetGame(mode = state?.mode ?? "q2") {
     mode,
     time: 0,
     started: false,
-    funds: 2000,
+    funds: mode === "q3" ? 2500 : 2000,
     totalSpent: 0,
     kills: 0,
     leaks: 0,
@@ -189,9 +227,12 @@ function resetGame(mode = state?.mode ?? "q2") {
   running = false;
   selectedTowerId = null;
   simulationAccumulator = 0;
+  q2AutoActions = [];
   setStatus(mode === "q1"
     ? "问题1：请在开始前完成全部布塔；开始后不能建塔或升级。"
-    : "问题2：战斗过程中可以随时建塔和升级，击杀会获得赏金。",
+    : mode === "q2"
+      ? "问题2：战斗过程中可以随时建塔和升级，击杀会获得赏金。"
+      : "问题3：侦察兵怕小塔，重甲、精英和Boss怕大塔；根据波次动态调整塔型。",
   );
   updateModeButtons();
   draw();
@@ -214,6 +255,22 @@ function loadQ1BestLayout() {
   }
   selectedTowerId = null;
   setStatus(`已载入${preset.name}：${preset.summary}，8座中型塔，塔心间距≥20米。点击开始观看复验。`);
+  draw();
+  updateInterface();
+}
+
+function loadQ2BestPolicy() {
+  resetGame("q2");
+  for (const [kind, x, y] of Q1_LAYOUTS[0].towers) {
+    const [ok, message] = placeTower(kind, x, y);
+    if (!ok) {
+      setStatus(`问题2策略载入失败：${message}`);
+      return;
+    }
+  }
+  q2AutoActions = Q2_POLICY_ACTIONS.map((action) => ({ ...action }));
+  selectedTowerId = null;
+  setStatus("已载入问题2零漏怪策略：开局8座中型塔，后续按赏金自动建造和升级。点击开始复验。");
   draw();
   updateInterface();
 }
@@ -303,6 +360,42 @@ function upgradeSelectedTower() {
   setStatus(`升级为${upgraded.name}，花费${cost}元。`);
 }
 
+function policyActionCost(action) {
+  if (action.action === "build") return TOWER_SPECS[action.kind].cost;
+  const tower = findTower(action.towerId);
+  if (!tower || !UPGRADE_TO[tower.kind]) return null;
+  return TOWER_SPECS[UPGRADE_TO[tower.kind]].cost - TOWER_SPECS[tower.kind].cost;
+}
+
+function executePolicyAction(action) {
+  if (action.action === "build") return placeTower(action.kind, action.x, action.y).slice(0, 2);
+  const tower = findTower(action.towerId);
+  if (!tower) return [false, "策略升级目标不存在"];
+  const nextKind = UPGRADE_TO[tower.kind];
+  if (!nextKind) return [false, "策略升级目标已是大型塔"];
+  const upgraded = TOWER_SPECS[nextKind];
+  const cost = upgraded.cost - TOWER_SPECS[tower.kind].cost;
+  if (state.funds < cost) return [false, "资金不足"];
+  if (towerCounts()[nextKind] >= upgraded.max) return [false, `${upgraded.name}已达到数量上限`];
+  tower.kind = nextKind;
+  state.funds -= cost;
+  state.totalSpent += cost;
+  return [true, `升级为${upgraded.name}，花费${cost}元`];
+}
+
+function runQ2PolicyActions() {
+  while (q2AutoActions.length > 0) {
+    const action = q2AutoActions[0];
+    if (state.kills < action.minKills) return;
+    const cost = policyActionCost(action);
+    if (cost === null) throw new Error("内置问题2策略动作已失效");
+    if (state.funds < cost) return;
+    const [ok, message] = executePolicyAction(action);
+    if (!ok) throw new Error(`内置问题2策略动作无效：${message}`);
+    q2AutoActions.shift();
+  }
+}
+
 function stepSimulation(dt) {
   if (!state.started || gameComplete() || dt <= 0) return;
   state.time += dt;
@@ -334,7 +427,15 @@ function stepSimulation(dt) {
     });
     const target = candidates[0];
     tower.targetId = target.id;
-    const dealt = spec.dps * dt;
+    const counterMatrix = {
+      normal: { small: 1, medium: 1, large: 1 },
+      scout: { small: 1.35, medium: 1, large: 0.75 },
+      armored: { small: 0.65, medium: 1, large: 1.35 },
+      elite: { small: 0.75, medium: 1, large: 1.25 },
+      boss: { small: 0.80, medium: 1, large: 1.25 },
+    };
+    const multiplier = state.mode === "q3" ? counterMatrix[target.archetype][tower.kind] : 1;
+    const dealt = spec.dps * multiplier * dt;
     damage.set(target.id, (damage.get(target.id) ?? 0) + dealt);
     tower.totalDamage += dealt;
     state.beams.push([tower.id, target.id]);
@@ -371,7 +472,9 @@ function updateModeButtons() {
   modeButtons.forEach((button) => button.classList.toggle("active", button.dataset.mode === state.mode));
   modeDescription.textContent = state.mode === "q1"
     ? "10名敌人，固定1700生命，开局2000元，无赏金；按下开始后锁定布局。"
-    : "25名敌人分四波进攻；可以用击杀赏金在战斗中建塔和升级。";
+    : state.mode === "q2"
+      ? "25名敌人分四波进攻；可以用击杀赏金在战斗中建塔和升级。"
+      : "30名混合兵种与Boss；小塔克制侦察兵，大塔克制重甲，考验动态换型。";
 }
 
 function chooseKind(kind) {
@@ -516,7 +619,8 @@ function drawEnemies() {
     const radius = 14;
     ctx.beginPath();
     ctx.arc(sx, sy, radius, 0, Math.PI * 2);
-    ctx.fillStyle = colors[enemy.wave - 1];
+    const q3Colors = { scout: "#55b7e8", armored: "#95a5a6", elite: "#b07ad9", boss: "#ef5350" };
+    ctx.fillStyle = state.mode === "q3" ? q3Colors[enemy.archetype] : colors[enemy.wave - 1];
     ctx.fill();
     ctx.strokeStyle = "#111827";
     ctx.lineWidth = 4;
@@ -569,7 +673,8 @@ function updateInterface() {
   killsStat.textContent = String(state.kills);
   leaksStat.textContent = String(state.leaks);
   const remaining = state.enemies.filter((enemy) => !enemy.finished).length;
-  detailStat.textContent = `累计花费 ${state.totalSpent} 元 · 未结束敌人 ${remaining} · 塔数 小${counts.small}/20 中${counts.medium}/15 大${counts.large}/10`;
+  const autoDetail = q2AutoActions.length ? ` · 自动策略待执行 ${q2AutoActions.length}` : "";
+  detailStat.textContent = `累计花费 ${state.totalSpent} 元 · 未结束敌人 ${remaining} · 塔数 小${counts.small}/20 中${counts.medium}/15 大${counts.large}/10${autoDetail}`;
 
   const selected = findTower(selectedTowerId);
   if (selected) {
@@ -622,6 +727,7 @@ startButton.addEventListener("click", toggleRunning);
 speedButton.addEventListener("click", cycleSpeed);
 restartButton.addEventListener("click", () => resetGame(state.mode));
 presetButton.addEventListener("click", loadQ1BestLayout);
+q2PresetButton.addEventListener("click", loadQ2BestPolicy);
 upgradeButton.addEventListener("click", upgradeSelectedTower);
 
 window.addEventListener("keydown", (event) => {
@@ -636,6 +742,7 @@ window.addEventListener("keydown", (event) => {
   else if (event.key.toLowerCase() === "f") cycleSpeed();
   else if (event.key.toLowerCase() === "r") resetGame(state.mode);
   else if (event.key.toLowerCase() === "p") loadQ1BestLayout();
+  else if (event.key.toLowerCase() === "o") loadQ2BestPolicy();
   else if (event.key === "Escape") {
     selectedTowerId = null;
     setStatus("已取消已有塔的选择。");
@@ -650,6 +757,7 @@ function frame(timestamp) {
     let iterations = 0;
     while (simulationAccumulator >= 0.02 && iterations < 40) {
       stepSimulation(0.02);
+      runQ2PolicyActions();
       simulationAccumulator -= 0.02;
       iterations += 1;
     }

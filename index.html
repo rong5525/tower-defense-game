@@ -44,6 +44,9 @@
             <button class="mode-button active" data-mode="q2" type="button">
               问题2 动态调度
             </button>
+            <button class="mode-button" data-mode="q3" type="button">
+              问题3 克制挑战
+            </button>
           </div>
           <p id="mode-description" class="section-note"></p>
         </section>
@@ -76,6 +79,9 @@
           <button id="restart-button" class="secondary-button" type="button">重开 R</button>
           <button id="preset-button" class="secondary-button" type="button">
             载入所选方案 P
+          </button>
+          <button id="q2-preset-button" class="secondary-button" type="button">
+            问题2零漏怪策略 O
           </button>
         </section>
 
@@ -115,13 +121,14 @@
             <li>鼠标或触控点击地图建塔；点击已有塔可选择。</li>
             <li>数字键 1、2、3 切换塔型，U 升级。</li>
             <li>Space 开始或暂停，F 在 1×、2×、4×、8× 间切换，R 重新开始。</li>
-            <li>先从前五名中选择方案，再按 P 或“载入所选方案”；五个方案均由精细步长复验为4杀6漏。</li>
+            <li>问题1可从前五名中选择方案并按 P；问题2按 O 可载入25杀、0漏怪的自动建造升级策略。</li>
             <li>塔的彩色实体圆严格按题面10米塔基半径绘制；浅红色区域是塔心禁入区，任意两座塔基不能重叠。</li>
             <li>问题1开始后不能继续建塔；问题2战斗中可以随时建设和升级。</li>
+            <li>问题3中侦察兵怕小塔，重甲、精英和Boss更怕大塔；需按兵种调整投资。</li>
           </ul>
         </details>
       </aside>
     </main>
-    <script src="game.js?v=20261123-top5-8x"></script>
+    <script src="game.js?v=20261127-q2-zero-leak"></script>
   </body>
 </html>
