@@ -9,10 +9,92 @@
     />
     <title>守关 塔防布局挑战</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20261127-smooth-8x-1" />
   </head>
   <body>
     <main class="app-shell">
+      <aside class="info-panel" aria-label="游戏介绍和规则">
+        <header class="info-heading">
+          <p class="eyebrow">游戏手册</p>
+          <h2>守住基地，设计你的最优策略</h2>
+          <p>这是一款由数学建模题转化而来的塔防实验游戏。你需要根据路径几何、塔的射程和资源约束完成防御。</p>
+        </header>
+
+        <section class="info-card">
+          <span class="info-kicker">基本目标</span>
+          <ul>
+            <li>敌人沿道路从“起点”前往“基地”。</li>
+            <li>合理安排小、中、大型塔的位置与升级时机。</li>
+            <li>问题3中基地生命归零即失败，剩余生命决定星级。</li>
+          </ul>
+        </section>
+
+        <section class="info-card tower-spec-card">
+          <span class="info-kicker">防御塔参数</span>
+          <div class="tower-spec-grid" aria-label="防御塔完整参数">
+            <div><strong>小型塔</strong><span>100元</span><small>射程75m · DPS 10 · 最多20座</small></div>
+            <div><strong>中型塔</strong><span>250元</span><small>射程125m · DPS 20 · 最多15座</small></div>
+            <div><strong>大型塔</strong><span>600元</span><small>射程200m · DPS 40 · 最多10座</small></div>
+          </div>
+          <p class="tower-spec-note">塔基半径10m；塔心离道路中心线至少15m，两塔塔心至少间20m。</p>
+        </section>
+
+        <section id="q1-rules" class="info-card mode-rule-panel">
+          <span class="info-kicker">问题1规则</span>
+          <h3>开局一次性布塔</h3>
+          <ul>
+            <li>开局资金2000元，敌人共10名、每名1700生命。</li>
+            <li>开始战斗后锁定布局，不能继续建塔或升级。</li>
+            <li>目标是比较不同几何布局的最终击杀效果。</li>
+          </ul>
+        </section>
+
+        <section id="q2-rules" class="info-card mode-rule-panel" hidden>
+          <span class="info-kicker">问题2规则</span>
+          <h3>战斗中的动态调度</h3>
+          <ul>
+            <li>25名敌人分四波出现，击杀敌人可获得赏金。</li>
+            <li>战斗过程中可以继续建塔和升级。</li>
+            <li>关键是决定资金在什么时间、什么位置投入。</li>
+          </ul>
+        </section>
+
+        <section id="q3-rules" class="info-card mode-rule-panel" hidden>
+          <span class="info-kicker">问题3规则</span>
+          <h3>五关随机战役</h3>
+          <ul>
+            <li>五关拥有不同路线、敌人组合和资源节奏。</li>
+            <li>可升级分支、出售搬迁、建立几何连接并使用定点炮击。</li>
+            <li>支持1—4人协作、资金援助和跨路支援。</li>
+            <li>自动演示可分别设置每位玩家1—5星策略水平，用于直观比较操作质量。</li>
+            <li>路径、赏金和升级卡由随机种子控制。</li>
+            <li>零漏怪获得三星；节省资金还能获得四星或五星。</li>
+          </ul>
+        </section>
+
+        <section class="info-card controls-card">
+          <span class="info-kicker">通用操作</span>
+          <dl>
+            <div><dt>鼠标</dt><dd>点击地图建塔或选择已有塔</dd></div>
+            <div><dt>1 / 2 / 3</dt><dd>切换小型、中型、大型塔</dd></div>
+            <div><dt>Space</dt><dd>开始或暂停</dd></div>
+            <div><dt>F</dt><dd>切换1×、2×、4×、8×速度</dd></div>
+            <div><dt>U</dt><dd>升级当前选中的防御塔</dd></div>
+            <div><dt>R</dt><dd>重开当前问题</dd></div>
+          </dl>
+        </section>
+
+        <details class="help-panel">
+          <summary>完整限制条件</summary>
+          <ul>
+            <li>塔的彩色实体圆严格按10米塔基半径绘制。</li>
+            <li>浅红色区域是塔心禁入区，塔基不得侵入道路。</li>
+            <li>任意两座塔的塔基不能相互重叠。</li>
+            <li>点击已有塔可查看射程、伤害、目标和累计输出。</li>
+          </ul>
+        </details>
+      </aside>
+
       <section class="game-column" aria-label="游戏地图">
         <header class="game-header">
           <div>
@@ -23,46 +105,118 @@
           <div class="header-badge">A题可玩版</div>
         </header>
 
+        <section class="battle-hud" aria-label="当前战局状态">
+          <div class="hud-main-row">
+            <span class="hud-title">战局状态</span>
+            <div class="hud-stat"><span id="funds-label">资金</span><strong id="funds-stat">2000 元</strong></div>
+            <div class="hud-stat"><span>时间</span><strong id="time-stat">0.0 s</strong></div>
+            <div class="hud-stat"><span>击杀</span><strong id="kills-stat">0</strong></div>
+            <div class="hud-stat"><span>漏怪</span><strong id="leaks-stat">0</strong></div>
+            <div id="base-health-wrap" class="base-health-wrap hud-health" hidden>
+              <div class="base-health-head">
+                <span>基地生命</span>
+                <strong id="base-health-text">100 / 100</strong>
+              </div>
+              <div class="health-track"><span id="base-health-bar"></span></div>
+              <div id="star-result" class="star-result" aria-live="polite" hidden></div>
+            </div>
+          </div>
+          <p id="detail-stat" class="detail-stat hud-detail"></p>
+        </section>
+
         <div class="canvas-frame">
           <canvas
             id="game-canvas"
-            width="2000"
-            height="2000"
+            width="1200"
+            height="1200"
             aria-label="塔防游戏地图。点击地图建塔，点击已有塔进行选择。"
           ></canvas>
           <div id="canvas-message" class="canvas-message" aria-live="polite"></div>
+          <div id="action-toast" class="action-toast" aria-live="polite" hidden></div>
+          <p id="status-message" class="status-message canvas-status" aria-live="polite">
+            先选择塔型并点击地图建塔，然后开始战斗。
+          </p>
         </div>
+
+        <section id="runtime-toolbar" class="runtime-toolbar" aria-label="战斗中的操作台">
+          <div class="toolbar-group toolbar-battle">
+            <span class="toolbar-label">战斗</span>
+            <div class="toolbar-button-row">
+              <button id="start-button" class="primary-button" type="button">开始</button>
+              <button id="speed-button" class="secondary-button" type="button">1×</button>
+              <button id="restart-button" class="secondary-button" type="button">重开</button>
+            </div>
+          </div>
+
+          <div class="toolbar-group toolbar-build">
+            <span class="toolbar-label">建造防御塔</span>
+            <div class="tower-options">
+              <button class="tower-button active" data-kind="small" type="button">
+                <span class="tower-key">1</span>
+                <span><strong>小型塔</strong><small>100元</small></span>
+              </button>
+              <button class="tower-button" data-kind="medium" type="button">
+                <span class="tower-key">2</span>
+                <span><strong>中型塔</strong><small>250元</small></span>
+              </button>
+              <button class="tower-button" data-kind="large" type="button">
+                <span class="tower-key">3</span>
+                <span><strong>大型塔</strong><small>600元</small></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="toolbar-group toolbar-selected">
+            <span class="toolbar-label">选中塔操作</span>
+            <p id="selected-info">待建：小型塔</p>
+            <button id="upgrade-button" class="secondary-button" type="button">
+              普通升级
+            </button>
+            <div id="q3-tower-actions" class="q3-tower-actions" hidden>
+              <p class="action-label">分支升级</p>
+              <div class="branch-grid">
+                <button type="button" data-branch="damage">火力</button>
+                <button type="button" data-branch="range">射程</button>
+                <button type="button" data-branch="rapid">急速</button>
+              </div>
+              <div class="tower-action-grid">
+                <button id="sell-button" type="button">出售 70%</button>
+                <button id="move-button" type="button">搬迁</button>
+                <button id="link-button" type="button">几何连接</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="artillery-panel" class="toolbar-group toolbar-skill" hidden>
+            <span class="toolbar-label">主动技能</span>
+            <strong>定点炮击</strong>
+            <small id="artillery-info">点击按钮后在地图选择落点</small>
+            <button id="artillery-button" class="skill-button" type="button">瞄准炮击</button>
+          </div>
+
+        </section>
       </section>
 
       <aside class="control-panel" aria-label="游戏控制面板">
-        <section class="panel-section">
-          <h2>游戏模式</h2>
-          <div class="segmented-control" role="group" aria-label="选择游戏模式">
-            <button class="mode-button" data-mode="q1" type="button">
+        <section class="mode-tabs-shell">
+          <h2>选择问题</h2>
+          <div class="segmented-control" role="tablist" aria-label="选择问题标签页">
+            <button id="q1-tab-button" class="mode-button" data-mode="q1" type="button" role="tab" aria-controls="q1-tab">
               问题1 开局布塔
             </button>
-            <button class="mode-button active" data-mode="q2" type="button">
+            <button id="q2-tab-button" class="mode-button active" data-mode="q2" type="button" role="tab" aria-controls="q2-tab">
               问题2 动态调度
             </button>
-            <button class="mode-button" data-mode="q3" type="button">
-              问题3 克制挑战
+            <button id="q3-tab-button" class="mode-button" data-mode="q3" type="button" role="tab" aria-controls="q3-tab">
+              问题3 五关战役
             </button>
           </div>
           <p id="mode-description" class="section-note"></p>
         </section>
 
-        <section class="panel-section">
-          <h2>战局</h2>
-          <div class="stats-grid">
-            <div class="stat-card"><span>资金</span><strong id="funds-stat">2000</strong></div>
-            <div class="stat-card"><span>时间</span><strong id="time-stat">0.0 s</strong></div>
-            <div class="stat-card"><span>击杀</span><strong id="kills-stat">0</strong></div>
-            <div class="stat-card"><span>漏怪</span><strong id="leaks-stat">0</strong></div>
-          </div>
-          <p id="detail-stat" class="detail-stat"></p>
-        </section>
-
-        <section class="preset-picker" aria-label="问题1优化方案选择">
+        <section id="q1-tab" class="mode-tab-panel" role="tabpanel" aria-labelledby="q1-tab-button" hidden>
+        <div id="q1-preset-panel" class="preset-picker pregame-panel" aria-label="问题1优化方案选择">
+          <span class="pregame-kicker">开局设置</span>
           <label for="preset-select">问题1精确复验前五名</label>
           <select id="preset-select">
             <option value="0">方案1 · 4杀6漏 · 临界93.1血</option>
@@ -71,64 +225,103 @@
             <option value="3">方案4 · 4杀6漏 · 临界93.2血</option>
             <option value="4">方案5 · 4杀6漏 · 临界93.5血</option>
           </select>
-        </section>
-
-        <section class="action-row" aria-label="游戏操作">
-          <button id="start-button" class="primary-button" type="button">开始 Space</button>
-          <button id="speed-button" class="secondary-button" type="button">速度 1× F</button>
-          <button id="restart-button" class="secondary-button" type="button">重开 R</button>
           <button id="preset-button" class="secondary-button" type="button">
-            载入所选方案 P
+            载入所选开局方案 P
           </button>
+        </div>
+        </section>
+
+        <section id="q2-tab" class="mode-tab-panel" role="tabpanel" aria-labelledby="q2-tab-button">
+        <div id="q2-preset-panel" class="pregame-panel" aria-label="问题2开局设置">
+          <span class="pregame-kicker">开局设置</span>
+          <strong>问题2动态策略</strong>
+          <p class="section-note">载入经过验证的自动建造与升级时间表，开战后按资金和击杀数执行。</p>
           <button id="q2-preset-button" class="secondary-button" type="button">
-            问题2零漏怪策略 O
+            载入问题2零漏怪策略 O
           </button>
+        </div>
         </section>
 
-        <p id="status-message" class="status-message" aria-live="polite">
-          先选择塔型并点击地图建塔，然后开始战斗。
-        </p>
-
-        <section class="panel-section">
-          <h2>选择防御塔</h2>
-          <div class="tower-options">
-            <button class="tower-button active" data-kind="small" type="button">
-              <span class="tower-key">1</span>
-              <span><strong>小型塔</strong><small>￥100　75m　DPS 10</small></span>
-            </button>
-            <button class="tower-button" data-kind="medium" type="button">
-              <span class="tower-key">2</span>
-              <span><strong>中型塔</strong><small>￥250　125m　DPS 20</small></span>
-            </button>
-            <button class="tower-button" data-kind="large" type="button">
-              <span class="tower-key">3</span>
-              <span><strong>大型塔</strong><small>￥600　200m　DPS 40</small></span>
-            </button>
+        <section id="q3-tab" class="campaign-panel mode-tab-panel" role="tabpanel" aria-labelledby="q3-tab-button" hidden>
+          <div class="campaign-heading">
+            <div>
+              <span class="campaign-kicker">当前已载入</span>
+              <strong id="level-title">第1关</strong>
+            </div>
+            <span id="level-progress">1人</span>
           </div>
+
+          <div class="demo-config" aria-label="自动演示配置">
+            <div class="demo-config-heading">
+              <strong>选择演示组合</strong>
+              <span>每位玩家独立评级</span>
+            </div>
+            <div class="demo-config-grid">
+              <label class="demo-config-field" for="q3-level-select">
+                <span>关卡</span>
+                <select id="q3-level-select">
+                  <option value="0">第1关</option>
+                  <option value="1">第2关</option>
+                  <option value="2">第3关</option>
+                  <option value="3">第4关</option>
+                  <option value="4">第5关</option>
+                </select>
+              </label>
+              <label class="demo-config-field" for="q3-player-count-select">
+                <span>玩家数</span>
+                <select id="q3-player-count-select">
+                  <option value="1">1人</option>
+                  <option value="2">2人</option>
+                  <option value="3">3人</option>
+                  <option value="4">4人</option>
+                </select>
+              </label>
+            </div>
+            <div class="player-star-heading">
+              <span>玩家策略水平</span>
+              <small>1星入门，5星专家</small>
+            </div>
+            <div id="player-star-config" class="player-star-config" aria-label="分别选择每位玩家的策略星级"></div>
+            <p id="demo-combination-preview" class="demo-combination-preview">将载入：第1关 · 玩家1 ★★★</p>
+            <button id="q3-demo-button" class="primary-button demo-load-button" type="button">载入并自动演示</button>
+          </div>
+
+          <div class="multiplayer-panel">
+            <span class="campaign-kicker">本局玩家与协作状态</span>
+            <div id="active-player-wrap" hidden>
+              <span class="campaign-kicker">当前操作</span>
+              <div id="active-player-buttons" class="compact-buttons"></div>
+            </div>
+            <div id="assist-controls" class="assist-controls" hidden>
+              <label for="assist-target">支援队友</label>
+              <select id="assist-target"></select>
+              <button id="assist-button" type="button">援助200元</button>
+            </div>
+            <div id="player-scoreboard" class="player-scoreboard"></div>
+          </div>
+          <p id="level-description" class="section-note"></p>
+          <div class="seed-panel">
+            <label for="seed-input">本局随机种子</label>
+            <input id="seed-input" type="number" min="1" step="1" value="20261127" />
+            <button id="seed-button" type="button">换一局随机配置</button>
+          </div>
+          <p id="random-summary" class="random-summary"></p>
+          <div class="balance-check">
+            <button id="balance-check-button" type="button">运行15套策略平衡自检</button>
+            <span id="balance-check-result">尚未运行</span>
+          </div>
+          <div class="star-criteria" aria-label="问题3星级规则">
+            <span>★ 通关</span>
+            <span>★★ 生命≥65%</span>
+            <span>★★★ 零漏怪</span>
+            <span>★★★★ 余资≥开局10%</span>
+            <span>★★★★★ 余资≥开局20%</span>
+          </div>
+          <ol id="strategy-log" class="strategy-log" aria-label="自动策略执行记录"></ol>
         </section>
 
-        <section class="panel-section selected-section">
-          <h2>当前选择</h2>
-          <p id="selected-info">待建：小型塔</p>
-          <button id="upgrade-button" class="secondary-button" type="button">
-            升级选中塔 U
-          </button>
-        </section>
-
-        <details class="help-panel">
-          <summary>操作和规则</summary>
-          <ul>
-            <li>鼠标或触控点击地图建塔；点击已有塔可选择。</li>
-            <li>数字键 1、2、3 切换塔型，U 升级。</li>
-            <li>Space 开始或暂停，F 在 1×、2×、4×、8× 间切换，R 重新开始。</li>
-            <li>问题1可从前五名中选择方案并按 P；问题2按 O 可载入25杀、0漏怪的自动建造升级策略。</li>
-            <li>塔的彩色实体圆严格按题面10米塔基半径绘制；浅红色区域是塔心禁入区，任意两座塔基不能重叠。</li>
-            <li>问题1开始后不能继续建塔；问题2战斗中可以随时建设和升级。</li>
-            <li>问题3中侦察兵怕小塔，重甲、精英和Boss更怕大塔；需按兵种调整投资。</li>
-          </ul>
-        </details>
       </aside>
     </main>
-    <script src="game.js?v=20261127-q2-zero-leak"></script>
+    <script src="game.js?v=20261127-smooth-8x-1"></script>
   </body>
 </html>
